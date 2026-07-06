@@ -580,7 +580,35 @@ function showToast(msg){
 
 function registerServiceWorker(){
   if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    let refreshing = false;
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if(refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    navigator.serviceWorker.register("./service-worker.js")
+      .then((registration) => {
+        checkForAppUpdate(registration);
+
+        document.addEventListener("visibilitychange", () => {
+          if(document.visibilityState === "visible") checkForAppUpdate(registration);
+        });
+
+        window.addEventListener("focus", () => checkForAppUpdate(registration));
+        setInterval(() => checkForAppUpdate(registration), 60 * 60 * 1000);
+      })
+      .catch(() => {});
+  }
+}
+
+function checkForAppUpdate(registration){
+  registration.update().catch(() => {});
+
+  if(registration.waiting){
+    showToast("Actualizando app...");
+    registration.waiting.postMessage({type:"SKIP_WAITING"});
   }
 }
 
