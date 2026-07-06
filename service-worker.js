@@ -4,6 +4,8 @@ const APP_SHELL = [
   "./index.html",
   "./styles.css",
   "./script.js",
+  "./firebase-config.js",
+  "./firebase-sync.js",
   "./manifest.webmanifest",
   "./img/logo.svg",
   "./img/icon-192.png",

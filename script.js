@@ -59,6 +59,8 @@ let chart = null;
 let editingFoodOriginalName = null;
 let dailyGoals = emptyGoals();
 let deferredInstallPrompt = null;
+let syncPaused = false;
+let syncSaveTimer = null;
 
 function storageKey(key){ return storagePrefix + key; }
 function emptyDay(){ return {desayuno:[], comida:[], cena:[], snacks:[]}; }
@@ -77,10 +79,14 @@ function isSameDay(a,b){
 function getStored(key){
   return localStorage.getItem(storageKey(key)) ?? localStorage.getItem(key);
 }
-function setStored(key, value){ localStorage.setItem(storageKey(key), value); }
+function setStored(key, value){
+  localStorage.setItem(storageKey(key), value);
+  scheduleCloudSync();
+}
 function deleteStored(key){
   localStorage.removeItem(storageKey(key));
   localStorage.removeItem(key);
+  scheduleCloudSync();
 }
 function listStored(prefix){
   const keys = new Set();
@@ -105,6 +111,7 @@ async function init(){
   renderCalendar();
   await selectDate(parseStoredDate(getStored("selectedDate")) || new Date());
   setActiveTab(VALID_TABS.has(getStored("activeTab")) ? getStored("activeTab") : "diario", false);
+  startCloudSync();
   registerServiceWorker();
 }
 
@@ -610,6 +617,106 @@ function checkForAppUpdate(registration){
     showToast("Actualizando app...");
     registration.waiting.postMessage({type:"SKIP_WAITING"});
   }
+}
+
+function startCloudSync(){
+  if(!window.CuadernoCloudSync) return;
+
+  window.CuadernoCloudSync.start({
+    getState: exportNotebookState,
+    applyState: importNotebookState,
+    onReady: () => showToast("Sincronizacion activa."),
+    onRemoteChange: () => showToast("Datos actualizados."),
+    onError: () => showToast("Sincronizacion no disponible.")
+  });
+}
+
+function scheduleCloudSync(){
+  if(syncPaused || !window.CuadernoCloudSync?.save) return;
+
+  clearTimeout(syncSaveTimer);
+  syncSaveTimer = setTimeout(() => {
+    window.CuadernoCloudSync.save(exportNotebookState());
+  }, 350);
+}
+
+function exportNotebookState(){
+  const days = {};
+  listStored("day:").forEach(key => {
+    try{ days[key.slice(4)] = JSON.parse(getStored(key)); }
+    catch(e){}
+  });
+
+  return {
+    version: 1,
+    foods: customFoods,
+    goals: dailyGoals,
+    days,
+    selectedDate: dateKey(selectedDate),
+    activeTab: getStored("activeTab") || "diario"
+  };
+}
+
+async function importNotebookState(state){
+  if(!state || typeof state !== "object") return;
+
+  syncPaused = true;
+  try{
+    clearNotebookStorage();
+
+    customFoods = sanitizeObject(state.foods);
+    dailyGoals = {...emptyGoals(), ...sanitizeObject(state.goals)};
+
+    localStorage.setItem(storageKey("foods"), JSON.stringify(customFoods));
+    localStorage.setItem(storageKey("goals"), JSON.stringify(dailyGoals));
+
+    const days = sanitizeObject(state.days);
+    Object.keys(days).forEach(key => {
+      if(/^\d{4}-\d{2}-\d{2}$/.test(key)){
+        localStorage.setItem(storageKey("day:"+key), JSON.stringify(normalizeDay(days[key])));
+      }
+    });
+
+    const nextDate = parseStoredDate(state.selectedDate) || selectedDate || new Date();
+    localStorage.setItem(storageKey("selectedDate"), dateKey(nextDate));
+
+    const nextTab = VALID_TABS.has(state.activeTab) ? state.activeTab : "diario";
+    localStorage.setItem(storageKey("activeTab"), nextTab);
+
+    loggedDays = new Set(listStored("day:").map(k => k.slice(4)));
+    hydrateGoalsForm();
+    populateDatalist();
+    renderFoodTable();
+    await selectDate(nextDate);
+    setActiveTab(nextTab, false);
+  } finally {
+    syncPaused = false;
+  }
+}
+
+function clearNotebookStorage(){
+  const keys = [];
+  for(let i=0;i<localStorage.length;i++){
+    const key = localStorage.key(i);
+    if(key === storageKey("deviceId")) continue;
+    if(key?.startsWith(storagePrefix) || key?.startsWith("day:") || ["foods", "goals", "selectedDate", "activeTab"].includes(key)){
+      keys.push(key);
+    }
+  }
+  keys.forEach(key => localStorage.removeItem(key));
+}
+
+function sanitizeObject(value){
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function normalizeDay(value){
+  const day = emptyDay();
+  const source = sanitizeObject(value);
+  MEALS.forEach(meal => {
+    day[meal.key] = Array.isArray(source[meal.key]) ? source[meal.key] : [];
+  });
+  return day;
 }
 
 document.addEventListener("DOMContentLoaded", init);
