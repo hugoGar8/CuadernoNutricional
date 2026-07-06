@@ -1,0 +1,25 @@
+{
+    "name": "Cuaderno Nutricional",
+    "short_name": "Nutrición",
+    "description": "Cuaderno nutricional para registrar comidas y seguir macros.",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#FBF8F1",
+    "theme_color": "#33482E",
+    "icons": [
+        {
+            "src": "img/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "img/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

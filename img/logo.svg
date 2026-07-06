@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Cuaderno Nutricional</title>
+  <desc id="desc">Logo circular con hoja, plato y lineas de cuaderno.</desc>
+  <rect width="512" height="512" rx="120" fill="#33482E"/>
+  <circle cx="256" cy="260" r="156" fill="#FBF8F1"/>
+  <circle cx="256" cy="260" r="112" fill="none" stroke="#DCD4BE" stroke-width="18"/>
+  <path d="M190 285c55-5 95-39 118-101 37 51 35 106-3 143-35 34-85 33-115-42z" fill="#5B4C8A"/>
+  <path d="M200 292c41-18 76-46 105-86" fill="none" stroke="#FBF8F1" stroke-width="16" stroke-linecap="round"/>
+  <path d="M158 170h54M150 202h42M320 352h54M300 384h62" stroke="#C1932A" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="176" cy="350" r="25" fill="#B5573A"/>
+</svg>

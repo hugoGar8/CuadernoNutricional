@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#33482E">
+  <meta name="description" content="Cuaderno nutricional instalable para registrar comidas, alimentos y macros.">
+  <title>Cuaderno Nutricional</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nutrición">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="img/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="brand">
+        <img class="brand-mark" src="img/logo.svg" alt="Logo de Cuaderno Nutricional">
+        <div>
+          <h1>Cuaderno Nutricional</h1>
+          <p>Registra tus comidas y sigue tus macros, día a día</p>
+        </div>
+      </div>
+      <button class="btn-ghost" id="open-food-modal" type="button">+ Nuevo alimento</button>
+    </header>
+
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab-button active" type="button" data-tab="diario">Diario</button>
+      <button class="tab-button" type="button" data-tab="objetivos">Objetivos</button>
+      <button class="tab-button" type="button" data-tab="alimentos">Alimentos</button>
+    </nav>
+
+    <main>
+      <section class="tab-panel active" id="tab-diario">
+        <div class="layout">
+          <aside class="calendar-panel">
+            <div class="calendar-head">
+              <button id="prev-month" type="button" aria-label="Mes anterior">&lsaquo;</button>
+              <h2 id="calendar-title">-</h2>
+              <button id="next-month" type="button" aria-label="Mes siguiente">&rsaquo;</button>
+            </div>
+            <div class="weekdays"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+            <p class="calendar-hint">El punto indica un día con comidas registradas.</p>
+          </aside>
+
+          <section class="day-panel">
+            <h2 id="selected-date-title">-</h2>
+            <div class="meals-grid" id="meals-grid"></div>
+          </section>
+
+          <aside class="summary-panel">
+            <div class="nutrition-label" id="nutrition-label"></div>
+            <div class="chart-box">
+              <h3>Reparto de macros</h3>
+              <canvas id="macro-chart" height="180"></canvas>
+              <div class="chart-legend" id="chart-legend"></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-objetivos">
+        <div class="goals-panel">
+          <div class="goals-intro">
+            <h2>Objetivos diarios</h2>
+            <p>Define tus límites de calorías y macros para adaptar el cuaderno a tu dieta.</p>
+          </div>
+          <form class="goals-form" id="goals-form">
+            <label>Calorías diarias (kcal)
+              <input type="number" id="goal-kcal" min="0" step="1" placeholder="p. ej. 2200">
+            </label>
+            <label>Proteína diaria (g)
+              <input type="number" id="goal-protein" min="0" step="1" placeholder="p. ej. 160">
+            </label>
+            <label>Grasas diarias (g)
+              <input type="number" id="goal-fat" min="0" step="1" placeholder="p. ej. 70">
+            </label>
+            <label>Carbohidratos diarios (g)
+              <input type="number" id="goal-carbs" min="0" step="1" placeholder="p. ej. 250">
+            </label>
+            <div class="goals-actions">
+              <button class="food-action secondary" id="goals-clear" type="button">Quitar límites</button>
+              <button class="food-action" type="submit">Guardar objetivos</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-alimentos">
+        <div class="foods-toolbar">
+          <div>
+            <h2>Alimentos registrados</h2>
+            <p>Consulta y edita los valores nutricionales por 100 g.</p>
+          </div>
+          <input type="search" id="food-search" placeholder="Buscar alimento">
+        </div>
+        <div class="foods-table-wrap">
+          <table class="foods-table">
+            <thead>
+              <tr>
+                <th>Alimento</th>
+                <th>kcal</th>
+                <th>Proteína</th>
+                <th>Grasas</th>
+                <th>Carbohidratos</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="foods-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="food-modal" role="dialog" aria-modal="true" aria-labelledby="food-modal-title">
+    <div class="modal-box">
+      <h3 id="food-modal-title">Nuevo alimento</h3>
+      <p class="modal-error" id="nf-error">Rellena el nombre y los valores por 100 g.</p>
+      <label>Nombre
+        <input type="text" id="nf-name" placeholder="p. ej. Tortitas de arroz">
+      </label>
+      <label>Calorías por 100 g (kcal)
+        <input type="number" id="nf-kcal" min="0" step="1">
+      </label>
+      <label>Proteína por 100 g (g)
+        <input type="number" id="nf-protein" min="0" step="0.1">
+      </label>
+      <label>Grasas por 100 g (g)
+        <input type="number" id="nf-fat" min="0" step="0.1">
+      </label>
+      <label>Carbohidratos por 100 g (g)
+        <input type="number" id="nf-carbs" min="0" step="0.1">
+      </label>
+      <div class="modal-actions">
+        <button id="nf-cancel" type="button">Cancelar</button>
+        <button id="nf-save" type="button">Guardar alimento</button>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="foods-datalist"></datalist>
+  <div class="toast" id="toast"></div>
+</body>
+</html>

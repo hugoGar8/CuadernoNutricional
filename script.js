@@ -1,0 +1,560 @@
+const FOOD_DB = {
+  "Yogur natural": {kcal:61, protein:3.5, fat:3.3, carbs:4.7},
+  "Yogur griego": {kcal:97, protein:9, fat:5, carbs:4},
+  "Arándanos": {kcal:57, protein:0.7, fat:0.3, carbs:14.5},
+  "Fresas": {kcal:32, protein:0.7, fat:0.3, carbs:7.7},
+  "Plátano": {kcal:89, protein:1.1, fat:0.3, carbs:22.8},
+  "Manzana": {kcal:52, protein:0.3, fat:0.2, carbs:13.8},
+  "Avena (copos)": {kcal:389, protein:16.9, fat:6.9, carbs:66.3},
+  "Huevo entero": {kcal:155, protein:13, fat:11, carbs:1.1},
+  "Clara de huevo": {kcal:52, protein:11, fat:0.2, carbs:0.7},
+  "Pan blanco": {kcal:265, protein:9, fat:3.2, carbs:49},
+  "Pan integral": {kcal:247, protein:13, fat:3.4, carbs:41},
+  "Pechuga de pollo": {kcal:165, protein:31, fat:3.6, carbs:0},
+  "Pechuga de pavo": {kcal:135, protein:29, fat:1, carbs:0},
+  "Ternera magra": {kcal:172, protein:26, fat:7, carbs:0},
+  "Salmón": {kcal:208, protein:20, fat:13, carbs:0},
+  "Atún al natural": {kcal:116, protein:26, fat:1, carbs:0},
+  "Arroz blanco cocido": {kcal:130, protein:2.7, fat:0.3, carbs:28},
+  "Arroz integral cocido": {kcal:111, protein:2.6, fat:0.9, carbs:23},
+  "Pasta cocida": {kcal:131, protein:5, fat:1.1, carbs:25},
+  "Patata cocida": {kcal:87, protein:1.9, fat:0.1, carbs:20},
+  "Boniato": {kcal:86, protein:1.6, fat:0.1, carbs:20},
+  "Lentejas cocidas": {kcal:116, protein:9, fat:0.4, carbs:20},
+  "Garbanzos cocidos": {kcal:164, protein:8.9, fat:2.6, carbs:27},
+  "Aguacate": {kcal:160, protein:2, fat:14.7, carbs:8.5},
+  "Aceite de oliva": {kcal:884, protein:0, fat:100, carbs:0},
+  "Almendras": {kcal:579, protein:21, fat:50, carbs:22},
+  "Nueces": {kcal:654, protein:15, fat:65, carbs:14},
+  "Queso fresco batido": {kcal:74, protein:8, fat:3, carbs:4},
+  "Queso curado": {kcal:402, protein:26, fat:33, carbs:1.3},
+  "Leche entera": {kcal:61, protein:3.2, fat:3.3, carbs:4.8},
+  "Leche desnatada": {kcal:35, protein:3.4, fat:0.1, carbs:5},
+  "Tomate": {kcal:18, protein:0.9, fat:0.2, carbs:3.9},
+  "Lechuga": {kcal:15, protein:1.4, fat:0.2, carbs:2.9},
+  "Brócoli": {kcal:34, protein:2.8, fat:0.4, carbs:6.6},
+  "Zanahoria": {kcal:41, protein:0.9, fat:0.2, carbs:9.6},
+  "Miel": {kcal:304, protein:0.3, fat:0, carbs:82},
+  "Chocolate negro 85%": {kcal:598, protein:7.9, fat:42.6, carbs:45.9},
+  "Jamón serrano": {kcal:241, protein:31, fat:13, carbs:0},
+  "Jamón cocido / york": {kcal:113, protein:18, fat:4.3, carbs:1.5}
+};
+
+const MEALS = [
+  {key:"desayuno", label:"Desayuno", time:"mañana"},
+  {key:"comida", label:"Comida", time:"mediodía"},
+  {key:"cena", label:"Cena", time:"noche"},
+  {key:"snacks", label:"Snacks", time:"entre horas"}
+];
+const MONTH_NAMES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const storagePrefix = "cuadernoNutricional:";
+const VALID_TABS = new Set(["diario", "objetivos", "alimentos"]);
+
+let customFoods = {};
+let loggedDays = new Set();
+let calendarViewDate = new Date();
+let selectedDate = new Date();
+let dayData = emptyDay();
+let chart = null;
+let editingFoodOriginalName = null;
+let dailyGoals = emptyGoals();
+
+function storageKey(key){ return storagePrefix + key; }
+function emptyDay(){ return {desayuno:[], comida:[], cena:[], snacks:[]}; }
+function emptyGoals(){ return {kcal:null, protein:null, fat:null, carbs:null}; }
+function dateKey(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function allFoods(){ return {...FOOD_DB, ...customFoods}; }
+function isBaseFood(name){ return Object.prototype.hasOwnProperty.call(FOOD_DB, name); }
+function isSameDay(a,b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+function getStored(key){
+  return localStorage.getItem(storageKey(key)) ?? localStorage.getItem(key);
+}
+function setStored(key, value){ localStorage.setItem(storageKey(key), value); }
+function deleteStored(key){
+  localStorage.removeItem(storageKey(key));
+  localStorage.removeItem(key);
+}
+function listStored(prefix){
+  const keys = new Set();
+  for(let i=0;i<localStorage.length;i++){
+    const key = localStorage.key(i);
+    if(key.startsWith(storageKey(prefix))) keys.add(key.slice(storagePrefix.length));
+    if(key.startsWith(prefix)) keys.add(key);
+  }
+  return [...keys];
+}
+
+async function init(){
+  try{ customFoods = JSON.parse(getStored("foods") || "{}"); }
+  catch(e){ customFoods = {}; }
+  try{ dailyGoals = {...emptyGoals(), ...JSON.parse(getStored("goals") || "{}")}; }
+  catch(e){ dailyGoals = emptyGoals(); }
+  loggedDays = new Set(listStored("day:").map(k => k.slice(4)));
+  bindEvents();
+  hydrateGoalsForm();
+  populateDatalist();
+  renderFoodTable();
+  renderCalendar();
+  await selectDate(parseStoredDate(getStored("selectedDate")) || new Date());
+  setActiveTab(VALID_TABS.has(getStored("activeTab")) ? getStored("activeTab") : "diario", false);
+  registerServiceWorker();
+}
+
+function bindEvents(){
+  document.querySelectorAll(".tab-button").forEach(button => {
+    button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+  });
+  document.getElementById("prev-month").addEventListener("click", () => {
+    calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth()-1, 1);
+    renderCalendar();
+  });
+  document.getElementById("next-month").addEventListener("click", () => {
+    calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth()+1, 1);
+    renderCalendar();
+  });
+  document.getElementById("open-food-modal").addEventListener("click", () => openFoodModal());
+  document.getElementById("nf-cancel").addEventListener("click", closeFoodModal);
+  document.getElementById("nf-save").addEventListener("click", saveFoodFromModal);
+  document.getElementById("food-modal").addEventListener("click", (e) => {
+    if(e.target.id === "food-modal") closeFoodModal();
+  });
+  document.getElementById("food-search").addEventListener("input", renderFoodTable);
+  document.getElementById("goals-form").addEventListener("submit", saveGoals);
+  document.getElementById("goals-clear").addEventListener("click", clearGoals);
+}
+
+function setActiveTab(tabName, persist = true){
+  if(!VALID_TABS.has(tabName)) tabName = "diario";
+  document.querySelectorAll(".tab-button").forEach(button => button.classList.toggle("active", button.dataset.tab === tabName));
+  document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === `tab-${tabName}`));
+  if(tabName === "alimentos") renderFoodTable();
+  if(persist) setStored("activeTab", tabName);
+}
+
+function populateDatalist(){
+  const dl = document.getElementById("foods-datalist");
+  dl.innerHTML = "";
+  Object.keys(allFoods()).sort((a,b)=>a.localeCompare(b,"es")).forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    dl.appendChild(opt);
+  });
+}
+
+function renderCalendar(){
+  document.getElementById("calendar-title").textContent = `${MONTH_NAMES[calendarViewDate.getMonth()]} ${calendarViewDate.getFullYear()}`;
+  const grid = document.getElementById("calendar-grid");
+  grid.innerHTML = "";
+  const year = calendarViewDate.getFullYear();
+  const month = calendarViewDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  let startOffset = firstDay.getDay() - 1;
+  if(startOffset < 0) startOffset = 6;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date();
+
+  for(let i=0;i<startOffset;i++){
+    const cell = document.createElement("div");
+    cell.className = "cal-cell empty";
+    grid.appendChild(cell);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const cellDate = new Date(year, month, d);
+    const key = dateKey(cellDate);
+    const cell = document.createElement("div");
+    cell.className = "cal-cell";
+    if(isSameDay(cellDate, today)) cell.classList.add("today");
+    if(isSameDay(cellDate, selectedDate)) cell.classList.add("selected");
+    cell.innerHTML = `<span>${d}</span>`;
+    if(loggedDays.has(key)){
+      const dot = document.createElement("span");
+      dot.className = "cal-dot";
+      cell.appendChild(dot);
+    }
+    cell.addEventListener("click", () => selectDate(cellDate));
+    grid.appendChild(cell);
+  }
+}
+
+async function selectDate(d){
+  selectedDate = d;
+  calendarViewDate = new Date(d.getFullYear(), d.getMonth(), 1);
+  setStored("selectedDate", dateKey(d));
+  try{ dayData = JSON.parse(getStored("day:"+dateKey(d)) || "null") || emptyDay(); }
+  catch(e){ dayData = emptyDay(); }
+  const isToday = isSameDay(d, new Date());
+  document.getElementById("selected-date-title").textContent = `${isToday ? "Hoy, " : ""}${d.getDate()} de ${MONTH_NAMES[d.getMonth()]} de ${d.getFullYear()}`;
+  renderCalendar();
+  renderMeals();
+  renderSummary();
+}
+
+function parseStoredDate(key){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(key || "")) return null;
+  const [year, month, day] = key.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function renderMeals(){
+  const grid = document.getElementById("meals-grid");
+  grid.innerHTML = "";
+  MEALS.forEach(meal => grid.appendChild(buildMealCard(meal)));
+}
+
+function computeItemMacros(item){
+  const food = allFoods()[item.food];
+  if(!food) return {kcal:0, protein:0, fat:0, carbs:0, missing:true};
+  const factor = item.grams/100;
+  return {
+    kcal: food.kcal*factor,
+    protein: food.protein*factor,
+    fat: food.fat*factor,
+    carbs: food.carbs*factor
+  };
+}
+function mealTotals(mealKey){
+  return (dayData[mealKey] || []).reduce((acc, item) => {
+    const m = computeItemMacros(item);
+    acc.kcal += m.kcal; acc.protein += m.protein; acc.fat += m.fat; acc.carbs += m.carbs;
+    return acc;
+  }, {kcal:0, protein:0, fat:0, carbs:0});
+}
+function dayTotals(){
+  return MEALS.reduce((acc, meal) => {
+    const t = mealTotals(meal.key);
+    acc.kcal += t.kcal; acc.protein += t.protein; acc.fat += t.fat; acc.carbs += t.carbs;
+    return acc;
+  }, {kcal:0, protein:0, fat:0, carbs:0});
+}
+
+function buildMealCard(meal){
+  const card = document.createElement("div");
+  card.className = "meal-card";
+  card.dataset.meal = meal.key;
+  const totals = mealTotals(meal.key);
+  card.innerHTML = `
+    <div class="meal-head"><span class="meal-name">${meal.label}</span><span class="meal-kcal">${Math.round(totals.kcal)} kcal</span></div>
+    <span class="meal-time">${meal.time}</span>
+  `;
+  const items = dayData[meal.key] || [];
+  if(items.length === 0){
+    const note = document.createElement("p");
+    note.className = "empty-note";
+    note.textContent = "Todavía no has añadido nada.";
+    card.appendChild(note);
+  } else {
+    const list = document.createElement("ul");
+    list.className = "item-list";
+    items.forEach((item, idx) => {
+      const m = computeItemMacros(item);
+      const row = document.createElement("li");
+      row.className = "item-row";
+      row.innerHTML = `
+        <span class="item-name">${item.food}${m.missing ? " !" : ""}</span>
+        <span class="item-grams">${item.grams} g</span>
+        <span class="item-kcal">${Math.round(m.kcal)} kcal</span>
+        <button class="item-remove" type="button" aria-label="Eliminar">x</button>
+      `;
+      row.querySelector(".item-remove").addEventListener("click", () => removeItem(meal.key, idx));
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+  }
+
+  const form = document.createElement("form");
+  form.className = "add-form";
+  form.innerHTML = `
+    <input type="text" list="foods-datalist" placeholder="Alimento" required>
+    <input type="number" placeholder="g" min="1" step="1" required>
+    <button type="submit">Añadir</button>
+  `;
+  const errorEl = document.createElement("p");
+  errorEl.className = "form-error";
+  errorEl.style.display = "none";
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const nameInput = form.querySelector('input[type="text"]');
+    const gramsInput = form.querySelector('input[type="number"]');
+    const name = nameInput.value.trim();
+    const grams = parseFloat(gramsInput.value);
+    const match = Object.keys(allFoods()).find(f => f.toLowerCase() === name.toLowerCase());
+    if(!match || !grams){
+      errorEl.textContent = `"${name}" no está en la lista. Créalo con "+ Nuevo alimento".`;
+      errorEl.style.display = "block";
+      return;
+    }
+    errorEl.style.display = "none";
+    addItem(meal.key, match, grams);
+    nameInput.value = "";
+    gramsInput.value = "";
+    nameInput.focus();
+  });
+  card.appendChild(form);
+  card.appendChild(errorEl);
+  return card;
+}
+
+async function addItem(mealKey, foodName, grams){
+  dayData[mealKey].push({food:foodName, grams});
+  persistDay();
+  renderMeals();
+  renderSummary();
+}
+async function removeItem(mealKey, idx){
+  dayData[mealKey].splice(idx,1);
+  persistDay();
+  renderMeals();
+  renderSummary();
+}
+function persistDay(){
+  const key = dateKey(selectedDate);
+  const isEmpty = MEALS.every(m => (dayData[m.key]||[]).length === 0);
+  if(isEmpty){
+    deleteStored("day:"+key);
+    loggedDays.delete(key);
+  } else {
+    setStored("day:"+key, JSON.stringify(dayData));
+    loggedDays.add(key);
+  }
+  renderCalendar();
+}
+
+function renderSummary(){
+  const t = dayTotals();
+  const maxGrams = Math.max(t.protein, t.fat, t.carbs, 1);
+  document.getElementById("nutrition-label").innerHTML = `
+    <p class="label-title">Datos nutricionales</p>
+    <p class="label-sub">${selectedDate.getDate()} de ${MONTH_NAMES[selectedDate.getMonth()]} - total del día</p>
+    <div class="rule-thick"></div>
+    <div class="cal-row"><span>Calorías</span><span class="cal-value">${Math.round(t.kcal)}</span></div>
+    ${goalRow("Calorías", t.kcal, dailyGoals.kcal, "kcal")}
+    <div class="rule-thick"></div>
+    ${macroRow("Proteína", "protein", t.protein, maxGrams)}
+    ${goalRow("Objetivo proteína", t.protein, dailyGoals.protein, "g")}
+    ${macroRow("Grasas", "fat", t.fat, maxGrams)}
+    ${goalRow("Objetivo grasas", t.fat, dailyGoals.fat, "g")}
+    ${macroRow("Carbohidratos", "carbs", t.carbs, maxGrams)}
+    ${goalRow("Objetivo carbohidratos", t.carbs, dailyGoals.carbs, "g")}
+    <div class="rule-thin"></div>
+    <p class="label-footnote">Calculado a partir de los alimentos añadidos en desayuno, comida, cena y snacks de este día.</p>
+  `;
+  renderChart(t);
+}
+function goalRow(label, value, goal, unit){
+  if(!goal || goal <= 0) return "";
+  const remaining = goal - value;
+  const percent = Math.min(value / goal * 100, 100);
+  const over = remaining < 0;
+  const amount = Math.abs(remaining);
+  return `
+    <div class="goal-row">
+      <div class="goal-row-top">
+        <strong>${label}</strong>
+        <span>${roundValue(value)} / ${roundValue(goal)} ${unit}</span>
+      </div>
+      <div class="goal-track"><div class="goal-fill ${over ? "over" : ""}" style="width:${percent.toFixed(0)}%"></div></div>
+      <p class="goal-note ${over ? "over" : ""}">${over ? "Te has pasado" : "Te quedan"} ${roundValue(amount)} ${unit}</p>
+    </div>
+  `;
+}
+function macroRow(label, cls, value, max){
+  return `
+    <div class="macro-row">
+      <div class="macro-row-top"><span class="mlabel">${label}</span><span class="mval">${value.toFixed(1)} g</span></div>
+      <div class="bar-track"><div class="bar-fill ${cls}" style="width:${(value/max*100).toFixed(0)}%"></div></div>
+    </div>
+  `;
+}
+function renderChart(t){
+  const canvas = document.getElementById("macro-chart");
+  if(!canvas || typeof Chart === "undefined") return;
+  const ctx = canvas.getContext("2d");
+  const proteinKcal = t.protein*4;
+  const carbsKcal = t.carbs*4;
+  const fatKcal = t.fat*9;
+  const total = proteinKcal+carbsKcal+fatKcal;
+  const data = total > 0 ? [proteinKcal, carbsKcal, fatKcal] : [1,1,1];
+  const colors = ["#5B4C8A", "#C1932A", "#B5573A"];
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: "doughnut",
+    data: {labels:["Proteína","Carbohidratos","Grasas"], datasets:[{data, backgroundColor:colors, borderWidth:0}]},
+    options: {
+      cutout:"68%",
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx) => total === 0 ? "Sin datos todavía" : `${ctx.label}: ${(ctx.parsed/total*100).toFixed(0)}%`}}}
+    }
+  });
+  const gramVals = [t.protein, t.carbs, t.fat];
+  document.getElementById("chart-legend").innerHTML = ["Proteína","Carbohidratos","Grasas"].map((label,i)=>`
+    <span class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${label} - ${gramVals[i].toFixed(1)} g</span>
+  `).join("");
+}
+
+function renderFoodTable(){
+  const query = (document.getElementById("food-search")?.value || "").trim().toLowerCase();
+  const tbody = document.getElementById("foods-table-body");
+  const foods = allFoods();
+  tbody.innerHTML = "";
+  Object.keys(foods)
+    .filter(name => name.toLowerCase().includes(query))
+    .sort((a,b) => a.localeCompare(b,"es"))
+    .forEach(name => tbody.appendChild(buildFoodRow(name, foods[name])));
+}
+
+function hydrateGoalsForm(){
+  document.getElementById("goal-kcal").value = dailyGoals.kcal ?? "";
+  document.getElementById("goal-protein").value = dailyGoals.protein ?? "";
+  document.getElementById("goal-fat").value = dailyGoals.fat ?? "";
+  document.getElementById("goal-carbs").value = dailyGoals.carbs ?? "";
+}
+function readGoalInput(id){
+  const raw = document.getElementById(id).value.trim();
+  if(raw === "") return null;
+  const value = parseFloat(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+function saveGoals(event){
+  event.preventDefault();
+  dailyGoals = {
+    kcal: readGoalInput("goal-kcal"),
+    protein: readGoalInput("goal-protein"),
+    fat: readGoalInput("goal-fat"),
+    carbs: readGoalInput("goal-carbs")
+  };
+  setStored("goals", JSON.stringify(dailyGoals));
+  renderSummary();
+  showToast("Objetivos guardados.");
+}
+function clearGoals(){
+  dailyGoals = emptyGoals();
+  deleteStored("goals");
+  hydrateGoalsForm();
+  renderSummary();
+  showToast("Límites quitados.");
+}
+function buildFoodRow(name, food){
+  const tr = document.createElement("tr");
+  tr.className = isBaseFood(name) && !customFoods[name] ? "is-base" : "";
+  tr.innerHTML = `
+    <td>${name}</td>
+    <td>${roundValue(food.kcal)}</td>
+    <td>${roundValue(food.protein)} g</td>
+    <td>${roundValue(food.fat)} g</td>
+    <td>${roundValue(food.carbs)} g</td>
+    <td><div class="food-actions"></div></td>
+  `;
+  const actions = tr.querySelector(".food-actions");
+  const editButton = document.createElement("button");
+  editButton.className = "food-action secondary";
+  editButton.type = "button";
+  editButton.textContent = "Editar";
+  editButton.addEventListener("click", () => openFoodModal(name));
+  actions.appendChild(editButton);
+
+  if(customFoods[name]){
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "food-action danger";
+    deleteButton.type = "button";
+    deleteButton.textContent = isBaseFood(name) ? "Restaurar" : "Borrar";
+    deleteButton.addEventListener("click", () => deleteCustomFood(name));
+    actions.appendChild(deleteButton);
+  }
+  return tr;
+}
+function roundValue(value){ return Number(value).toFixed(value % 1 === 0 ? 0 : 1); }
+
+function openFoodModal(name = null){
+  editingFoodOriginalName = name;
+  const modal = document.getElementById("food-modal");
+  const food = name ? allFoods()[name] : null;
+  document.getElementById("food-modal-title").textContent = name ? "Editar alimento" : "Nuevo alimento";
+  document.getElementById("nf-error").style.display = "none";
+  document.getElementById("nf-name").value = name || "";
+  document.getElementById("nf-kcal").value = food ? food.kcal : "";
+  document.getElementById("nf-protein").value = food ? food.protein : "";
+  document.getElementById("nf-fat").value = food ? food.fat : "";
+  document.getElementById("nf-carbs").value = food ? food.carbs : "";
+  modal.classList.remove("hidden");
+  document.getElementById("nf-name").focus();
+}
+function closeFoodModal(){
+  document.getElementById("food-modal").classList.add("hidden");
+  editingFoodOriginalName = null;
+}
+function saveFoodFromModal(){
+  const name = document.getElementById("nf-name").value.trim();
+  const kcal = parseFloat(document.getElementById("nf-kcal").value);
+  const protein = parseFloat(document.getElementById("nf-protein").value);
+  const fat = parseFloat(document.getElementById("nf-fat").value);
+  const carbs = parseFloat(document.getElementById("nf-carbs").value);
+  if(!name || [kcal, protein, fat, carbs].some(Number.isNaN)){
+    document.getElementById("nf-error").style.display = "block";
+    return;
+  }
+  if(editingFoodOriginalName && editingFoodOriginalName !== name && customFoods[editingFoodOriginalName]){
+    delete customFoods[editingFoodOriginalName];
+    renameFoodInDays(editingFoodOriginalName, name);
+    MEALS.forEach(meal => {
+      (dayData[meal.key] || []).forEach(item => {
+        if(item.food === editingFoodOriginalName) item.food = name;
+      });
+    });
+  }
+  customFoods[name] = {kcal, protein, fat, carbs};
+  persistFoods();
+  populateDatalist();
+  renderFoodTable();
+  renderMeals();
+  renderSummary();
+  closeFoodModal();
+  showToast(`"${name}" guardado.`);
+}
+function persistFoods(){ setStored("foods", JSON.stringify(customFoods)); }
+function deleteCustomFood(name){
+  delete customFoods[name];
+  persistFoods();
+  populateDatalist();
+  renderFoodTable();
+  renderMeals();
+  renderSummary();
+  showToast(isBaseFood(name) ? `"${name}" restaurado.` : `"${name}" borrado.`);
+}
+function renameFoodInDays(oldName, newName){
+  listStored("day:").forEach(key => {
+    try{
+      const data = JSON.parse(getStored(key));
+      let changed = false;
+      MEALS.forEach(meal => {
+        (data[meal.key] || []).forEach(item => {
+          if(item.food === oldName){ item.food = newName; changed = true; }
+        });
+      });
+      if(changed) setStored(key, JSON.stringify(data));
+    }catch(e){}
+  });
+}
+
+let toastTimer = null;
+function showToast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+function registerServiceWorker(){
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  }
+}
+
+document.addEventListener("DOMContentLoaded", init);
