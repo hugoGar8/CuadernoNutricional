@@ -1,4 +1,4 @@
-const CACHE_VERSION = "cuaderno-nutricional-v1";
+const CACHE_VERSION = "cuaderno-nutricional-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

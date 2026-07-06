@@ -43,8 +43,8 @@ const FOOD_DB = {
 const MEALS = [
   {key:"desayuno", label:"Desayuno", time:"mañana"},
   {key:"comida", label:"Comida", time:"mediodía"},
-  {key:"cena", label:"Cena", time:"noche"},
-  {key:"Merienda", label:"Merienda", time:"entre horas"}
+  {key:"merienda", label:"Merienda", time:"entre horas"},
+  {key:"cena", label:"Cena", time:"noche"}
 ];
 const MONTH_NAMES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const storagePrefix = "cuadernoNutricional:";
@@ -63,7 +63,7 @@ let syncPaused = false;
 let syncSaveTimer = null;
 
 function storageKey(key){ return storagePrefix + key; }
-function emptyDay(){ return {desayuno:[], comida:[], cena:[], Merienda:[]}; }
+function emptyDay(){ return {desayuno:[], comida:[], merienda:[], cena:[]}; }
 function emptyGoals(){ return {kcal:null, protein:null, fat:null, carbs:null}; }
 function dateKey(d){
   const y = d.getFullYear();
@@ -221,7 +221,7 @@ async function selectDate(d){
   selectedDate = d;
   calendarViewDate = new Date(d.getFullYear(), d.getMonth(), 1);
   setStored("selectedDate", dateKey(d));
-  try{ dayData = JSON.parse(getStored("day:"+dateKey(d)) || "null") || emptyDay(); }
+  try{ dayData = normalizeDay(JSON.parse(getStored("day:"+dateKey(d)) || "null")); }
   catch(e){ dayData = emptyDay(); }
   const isToday = isSameDay(d, new Date());
   document.getElementById("selected-date-title").textContent = `${isToday ? "Hoy, " : ""}${d.getDate()} de ${MONTH_NAMES[d.getMonth()]} de ${d.getFullYear()}`;
@@ -564,7 +564,7 @@ function deleteCustomFood(name){
 function renameFoodInDays(oldName, newName){
   listStored("day:").forEach(key => {
     try{
-      const data = JSON.parse(getStored(key));
+      const data = normalizeDay(JSON.parse(getStored(key)));
       let changed = false;
       MEALS.forEach(meal => {
         (data[meal.key] || []).forEach(item => {
@@ -716,6 +716,9 @@ function normalizeDay(value){
   MEALS.forEach(meal => {
     day[meal.key] = Array.isArray(source[meal.key]) ? source[meal.key] : [];
   });
+  if(Array.isArray(source.Merienda)){
+    day.merienda = [...day.merienda, ...source.Merienda];
+  }
   return day;
 }
 
