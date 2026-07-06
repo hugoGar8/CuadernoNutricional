@@ -44,7 +44,7 @@ const MEALS = [
   {key:"desayuno", label:"Desayuno", time:"mañana"},
   {key:"comida", label:"Comida", time:"mediodía"},
   {key:"cena", label:"Cena", time:"noche"},
-  {key:"snacks", label:"Snacks", time:"entre horas"}
+  {key:"Merienda", label:"Merienda", time:"entre horas"}
 ];
 const MONTH_NAMES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const storagePrefix = "cuadernoNutricional:";
@@ -63,7 +63,7 @@ let syncPaused = false;
 let syncSaveTimer = null;
 
 function storageKey(key){ return storagePrefix + key; }
-function emptyDay(){ return {desayuno:[], comida:[], cena:[], snacks:[]}; }
+function emptyDay(){ return {desayuno:[], comida:[], cena:[], Merienda:[]}; }
 function emptyGoals(){ return {kcal:null, protein:null, fat:null, carbs:null}; }
 function dateKey(d){
   const y = d.getFullYear();
@@ -378,7 +378,7 @@ function renderSummary(){
     ${macroRow("Carbohidratos", "carbs", t.carbs, maxGrams)}
     ${goalRow("Objetivo carbohidratos", t.carbs, dailyGoals.carbs, "g")}
     <div class="rule-thin"></div>
-    <p class="label-footnote">Calculado a partir de los alimentos añadidos en desayuno, comida, cena y snacks de este día.</p>
+    <p class="label-footnote">Calculado a partir de los alimentos añadidos en desayuno, comida, merienda y cena de este día.</p>
   `;
   renderChart(t);
 }
