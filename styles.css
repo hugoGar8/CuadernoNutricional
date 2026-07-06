@@ -104,7 +104,7 @@ body{
 .meal-card[data-meal="desayuno"]::before{background:var(--mustard);}
 .meal-card[data-meal="comida"]::before{background:var(--forest);}
 .meal-card[data-meal="cena"]::before{background:var(--plum);}
-.meal-card[data-meal="snacks"]::before{background:var(--rust);}
+.meal-card[data-meal="merienda"]::before{background:var(--rust);}
 .meal-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px;gap:8px;}
 .meal-name{font-family:var(--font-display);font-weight:600;font-size:16.5px;}
 .meal-time{font-size:11px;color:var(--ink-soft);display:block;margin-bottom:10px;}
