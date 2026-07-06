@@ -58,6 +58,7 @@ let dayData = emptyDay();
 let chart = null;
 let editingFoodOriginalName = null;
 let dailyGoals = emptyGoals();
+let deferredInstallPrompt = null;
 
 function storageKey(key){ return storagePrefix + key; }
 function emptyDay(){ return {desayuno:[], comida:[], cena:[], snacks:[]}; }
@@ -120,6 +121,7 @@ function bindEvents(){
     renderCalendar();
   });
   document.getElementById("open-food-modal").addEventListener("click", () => openFoodModal());
+  document.getElementById("install-app").addEventListener("click", installApp);
   document.getElementById("nf-cancel").addEventListener("click", closeFoodModal);
   document.getElementById("nf-save").addEventListener("click", saveFoodFromModal);
   document.getElementById("food-modal").addEventListener("click", (e) => {
@@ -128,6 +130,31 @@ function bindEvents(){
   document.getElementById("food-search").addEventListener("input", renderFoodTable);
   document.getElementById("goals-form").addEventListener("submit", saveGoals);
   document.getElementById("goals-clear").addEventListener("click", clearGoals);
+}
+
+function setupInstallPrompt(){
+  const installButton = document.getElementById("install-app");
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    installButton.hidden = false;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    installButton.hidden = true;
+    showToast("App instalada.");
+  });
+}
+
+async function installApp(){
+  if(!deferredInstallPrompt) return;
+
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  document.getElementById("install-app").hidden = true;
 }
 
 function setActiveTab(tabName, persist = true){
@@ -558,3 +585,4 @@ function registerServiceWorker(){
 }
 
 document.addEventListener("DOMContentLoaded", init);
+setupInstallPrompt();

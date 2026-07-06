@@ -44,6 +44,8 @@ body{
   transition:background .15s ease, color .15s ease;
 }
 .btn-ghost:hover{background:var(--forest-deep);color:var(--paper);}
+.header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.header-actions .btn-ghost[hidden]{display:none;}
 .tabs{
   display:inline-flex;gap:4px;padding:4px;margin:0 0 22px;
   background:var(--paper-dim);border:1px solid var(--line);border-radius:10px;
@@ -264,6 +266,8 @@ body{
   .app{padding:18px 14px 42px;}
   .app-header{align-items:flex-start;flex-direction:column;}
   .brand h1{font-size:23px;}
+  .header-actions{width:100%;}
+  .header-actions .btn-ghost{flex:1 1 180px;}
   .btn-ghost{width:100%;}
   .tabs{display:flex;width:100%;}
   .tab-button{flex:1;}
