@@ -174,7 +174,6 @@ body{
 .goal-fill.over{background:var(--rust);}
 .goal-note{font-size:11px;color:var(--ink-soft);margin:3px 0 0;}
 .goal-note.over{color:var(--rust);font-weight:600;}
-.chart-box{padding:16px;}
 .chart-box h3{font-family:var(--font-display);font-size:15px;margin:0 0 10px;font-weight:600;}
 .macro-chart{display:flex;flex-direction:column;gap:10px;}
 .macro-chart-row{display:grid;grid-template-columns:96px 1fr auto;align-items:center;gap:8px;font-size:12px;}
