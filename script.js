@@ -410,27 +410,37 @@ function macroRow(label, cls, value, max){
   `;
 }
 function renderChart(t){
-  const canvas = document.getElementById("macro-chart");
-  if(!canvas || typeof Chart === "undefined") return;
-  const ctx = canvas.getContext("2d");
+  const container = document.getElementById("macro-chart");
+  const legend = document.getElementById("chart-legend");
+  if(!container || !legend) return;
+
   const proteinKcal = t.protein*4;
   const carbsKcal = t.carbs*4;
   const fatKcal = t.fat*9;
   const total = proteinKcal+carbsKcal+fatKcal;
-  const data = total > 0 ? [proteinKcal, carbsKcal, fatKcal] : [1,1,1];
   const colors = ["#5B4C8A", "#C1932A", "#B5573A"];
-  if(chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: "doughnut",
-    data: {labels:["Proteína","Carbohidratos","Grasas"], datasets:[{data, backgroundColor:colors, borderWidth:0}]},
-    options: {
-      cutout:"68%",
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx) => total === 0 ? "Sin datos todavía" : `${ctx.label}: ${(ctx.parsed/total*100).toFixed(0)}%`}}}
-    }
-  });
-  const gramVals = [t.protein, t.carbs, t.fat];
-  document.getElementById("chart-legend").innerHTML = ["Proteína","Carbohidratos","Grasas"].map((label,i)=>`
-    <span class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${label} - ${gramVals[i].toFixed(1)} g</span>
+  const entries = [
+    {label:"Proteína", grams:t.protein, value:proteinKcal, color:colors[0]},
+    {label:"Carbohidratos", grams:t.carbs, value:carbsKcal, color:colors[1]},
+    {label:"Grasas", grams:t.fat, value:fatKcal, color:colors[2]}
+  ];
+
+  if(total <= 0){
+    container.innerHTML = '<p class="empty-note">Añade alimentos para ver la distribución de macros.</p>';
+    legend.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = entries.map((entry) => `
+    <div class="macro-chart-row">
+      <span class="macro-chart-label"><span class="legend-dot" style="background:${entry.color}"></span>${entry.label}</span>
+      <div class="macro-chart-bar"><div class="macro-chart-fill" style="width:${(entry.value/total*100).toFixed(0)}%; background:${entry.color}"></div></div>
+      <span class="macro-chart-value">${entry.grams.toFixed(1)} g</span>
+    </div>
+  `).join("");
+
+  legend.innerHTML = entries.map((entry) => `
+    <span class="legend-item"><span class="legend-dot" style="background:${entry.color}"></span>${entry.label} - ${entry.grams.toFixed(1)} g</span>
   `).join("");
 }
 
