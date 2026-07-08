@@ -1,11 +1,9 @@
-const CACHE_VERSION = "cuaderno-nutricional-v20260708";
+const CACHE_VERSION = "cuaderno-nutricional-v20260708-2";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./script.js",
-  "./firebase-config.js",
-  "./firebase-sync.js",
+  "./styles.css?v=20260708",
+  "./script.js?v=20260708",
   "./manifest.webmanifest",
   "./img/logo.svg",
   "./img/icon-192.png",
@@ -20,6 +18,12 @@ self.addEventListener("install", (event) => {
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
@@ -32,42 +36,27 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
-
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+
   if (event.request.mode === "navigate") {
-    event.respondWith(networkFirst(event.request, "./index.html"));
+    event.respondWith(fetch(event.request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_VERSION).then((cache) => cache.put("./index.html", copy));
+      return response;
+    }).catch(() => caches.match("./index.html")));
     return;
   }
 
-  event.respondWith(cacheFirst(event.request));
+  event.respondWith(
+    fetch(event.request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+      return response;
+    }).catch(() => caches.match(event.request))
+  );
 });
 
-async function networkFirst(request, fallbackUrl) {
-  const cache = await caches.open(CACHE_VERSION);
-
-  try {
-    const response = await fetch(request);
-    cache.put(request, response.clone());
-    return response;
-  } catch (error) {
-    return (await cache.match(request)) || cache.match(fallbackUrl);
-  }
-}
-
-async function cacheFirst(request) {
-  const cache = await caches.open(CACHE_VERSION);
-  const cached = await cache.match(request);
-
-  if (cached) return cached;
-
-  const response = await fetch(request);
-  cache.put(request, response.clone());
-  return response;
-}
