@@ -135,6 +135,7 @@ function bindEvents(){
     if(e.target.id === "food-modal") closeFoodModal();
   });
   document.getElementById("food-search").addEventListener("input", renderFoodTable);
+  document.getElementById("ranking-macro").addEventListener("change", renderFoodRanking);
   document.getElementById("goals-form").addEventListener("submit", saveGoals);
   document.getElementById("goals-clear").addEventListener("click", clearGoals);
 }
@@ -381,6 +382,7 @@ function renderSummary(){
     <p class="label-footnote">Calculado a partir de los alimentos añadidos en desayuno, comida, merienda y cena de este día.</p>
   `;
   renderChart(t);
+  renderMealAnalysis();
 }
 function goalRow(label, value, goal, unit){
   if(!goal || goal <= 0) return "";
@@ -441,6 +443,7 @@ function renderFoodTable(){
     .filter(name => name.toLowerCase().includes(query))
     .sort((a,b) => a.localeCompare(b,"es"))
     .forEach(name => tbody.appendChild(buildFoodRow(name, foods[name])));
+    renderFoodRanking();
 }
 
 function hydrateGoalsForm(){
@@ -504,6 +507,92 @@ function buildFoodRow(name, food){
   return tr;
 }
 function roundValue(value){ return Number(value).toFixed(value % 1 === 0 ? 0 : 1); }
+
+const MACRO_META = {
+  protein: {label:"Proteína", icon:"🍗", unit:"g"},
+  fat: {label:"Grasas", icon:"🥑", unit:"g"},
+  carbs: {label:"Carbohidratos", icon:"🍞", unit:"g"}
+};
+
+function renderMealAnalysis(){
+  const box = document.getElementById("meal-analysis");
+  if(!box) return;
+
+  const perMeal = MEALS.map(meal => ({meal, totals: mealTotals(meal.key)}));
+  const hasAnyItem = MEALS.some(meal => (dayData[meal.key] || []).length > 0);
+
+  if(!hasAnyItem){
+    box.innerHTML = `
+      <p class="analysis-title">Comidas con más:</p>
+      <p class="empty-note">Añade alimentos a alguna comida para ver este análisis.</p>
+    `;
+    return;
+  }
+
+  const rows = Object.keys(MACRO_META).map(key => {
+    const meta = MACRO_META[key];
+    const top = perMeal.reduce((best, current) => current.totals[key] > best.totals[key] ? current : best, perMeal[0]);
+    if(top.totals[key] <= 0){
+      return `
+        <div class="analysis-row">
+          <span class="analysis-icon">${meta.icon}</span>
+          <div class="analysis-text">
+            <span class="analysis-label">${meta.label}</span>
+            <span class="analysis-value">Sin registros</span>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="analysis-row">
+        <span class="analysis-icon">${meta.icon}</span>
+        <div class="analysis-text">
+          <span class="analysis-label">${meta.label}</span>
+          <span class="analysis-value">${top.meal.label} · ${roundValue(top.totals[key])} ${meta.unit}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  box.innerHTML = `<p class="analysis-title">Comidas con más:</p>${rows}`;
+}
+
+const RANKING_META = {
+  fat: {unit:"g", threshold:15, badge:"Alto en grasas"},
+  protein: {unit:"g", threshold:20, badge:"Alto en proteína"},
+  carbs: {unit:"g", threshold:50, badge:"Alto en carbohidratos"},
+  kcal: {unit:"kcal", threshold:400, badge:"Alto en calorías"}
+};
+
+function renderFoodRanking(){
+  const list = document.getElementById("ranking-list");
+  if(!list) return;
+
+  const select = document.getElementById("ranking-macro");
+  const macroKey = select ? select.value : "fat";
+  const meta = RANKING_META[macroKey];
+  const foods = allFoods();
+
+  const sorted = Object.keys(foods)
+    .map(name => ({name, value: foods[name][macroKey]}))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+
+  const max = sorted.length ? sorted[0].value : 1;
+
+  list.innerHTML = sorted.map(item => `
+    <li class="ranking-item">
+      <div class="ranking-item-top">
+        <span class="ranking-name">${item.name}</span>
+        <span class="ranking-value">
+          ${roundValue(item.value)} ${meta.unit}/100g
+          ${item.value >= meta.threshold ? `<span class="ranking-badge">${meta.badge}</span>` : ""}
+        </span>
+      </div>
+      <div class="ranking-bar-track"><div class="ranking-bar-fill" style="width:${(item.value / max * 100).toFixed(0)}%"></div></div>
+    </li>
+  `).join("");
+}
 
 function openFoodModal(name = null){
   editingFoodOriginalName = name;

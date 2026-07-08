@@ -68,11 +68,7 @@
 
           <aside class="summary-panel">
             <div class="nutrition-label" id="nutrition-label"></div>
-            <div class="chart-box">
-              <h3>Reparto de macros</h3>
-              <canvas id="macro-chart" height="180"></canvas>
-              <div class="chart-legend" id="chart-legend"></div>
-            </div>
+            <div class="analysis-box" id="meal-analysis"></div>
           </aside>
         </div>
       </section>
@@ -126,6 +122,18 @@
             </thead>
             <tbody id="foods-table-body"></tbody>
           </table>
+        </div>
+        <div class="ranking-box">
+          <div class="ranking-head">
+            <h3>Ranking de alimentos</h3>
+            <select id="ranking-macro">
+              <option value="fat" selected>Más grasa</option>
+              <option value="protein">Más proteína</option>
+              <option value="carbs">Más carbohidratos</option>
+              <option value="kcal">Más calorías</option>
+            </select>
+          </div>
+          <ol class="ranking-list" id="ranking-list"></ol>
         </div>
       </section>
     </main>
