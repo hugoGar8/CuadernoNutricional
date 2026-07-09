@@ -1,9 +1,9 @@
-const CACHE_VERSION = "cuaderno-nutricional-v20260712v1";
+const CACHE_VERSION = "cuaderno-nutricional-v20260712-fix1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=20260712v1",
-  "./script.js?v=20260712v1",
+  "./styles.css?v=20260712-fix1",
+  "./script.js?v=20260712-fix1",
   "./firebase-config.js",
   "./firebase-sync.js",
   "./manifest.webmanifest",
@@ -29,12 +29,21 @@ self.addEventListener("message", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(
-        keys
-          .filter((key) => key !== CACHE_VERSION)
-          .map((key) => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
+      .then((keys) => {
+        console.log("Service Worker activating. Deleting old caches:", keys);
+        return Promise.all(
+          keys
+            .filter((key) => key !== CACHE_VERSION)
+            .map((key) => {
+              console.log("Deleting cache:", key);
+              return caches.delete(key);
+            })
+        );
+      })
+      .then(() => {
+        console.log("Service Worker activated with version:", CACHE_VERSION);
+        return self.clients.claim();
+      })
   );
 });
 
