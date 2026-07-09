@@ -289,6 +289,15 @@ body{
   font-family:var(--font-display);font-weight:600;font-size:15px;margin:0 0 10px;
   color:var(--forest-deep);
 }
+
+.analysis-inner{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  background:var(--white);
+  margin-top:10px;
+}
+
 .analysis-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);}
 .analysis-row:last-child{border-bottom:none;}
 .analysis-icon{font-size:18px;flex:0 0 auto;}

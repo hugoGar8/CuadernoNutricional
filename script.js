@@ -391,7 +391,6 @@ function renderSummary(){
     <div class="rule-thin"></div>
     <div id="meal-analysis"></div>
     <div class="rule-thin"></div>
-    <p class="label-footnote">Calculado a partir de los alimentos añadidos...</p>
   `;
   renderChart(t);
   renderMealAnalysis();
@@ -523,12 +522,20 @@ function renderMealAnalysis(){
 
   if(!hasAnyItem){
     box.innerHTML = `
-      <p class="analysis-title">Comidas con más:</p>
-      <p class="empty-note">Añade alimentos a alguna comida para ver este análisis.</p>
-      ${rows}
+      <div class="analysis-inner">
+        <p class="analysis-title">Comidas con más:</p>
+        <p class="empty-note">Añade alimentos a alguna comida para ver este análisis.</p>
+      </div>
     `;
     return;
   }
+
+  box.innerHTML = `
+    <div class="analysis-inner">
+      <p class="analysis-title">Comidas con más:</p>
+      ${rows}
+    </div>
+  `;
 
   const rows = Object.keys(MACRO_META).map(key => {
     const meta = MACRO_META[key];
@@ -777,7 +784,7 @@ function registerServiceWorker(){
       window.location.reload();
     });
 
-    navigator.serviceWorker.register("./service-worker.js?v=20260710g")
+    navigator.serviceWorker.register("./service-worker.js?v=20260711g")
       .then((registration) => {
         checkForAppUpdate(registration);
 
