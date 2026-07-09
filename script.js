@@ -530,13 +530,6 @@ function renderMealAnalysis(){
     return;
   }
 
-  box.innerHTML = `
-    <div class="analysis-inner">
-      <p class="analysis-title">Comidas con más:</p>
-      ${rows}
-    </div>
-  `;
-
   const rows = Object.keys(MACRO_META).map(key => {
     const meta = MACRO_META[key];
     const top = perMeal.reduce((best, current) => current.totals[key] > best.totals[key] ? current : best, perMeal[0]);
@@ -562,7 +555,12 @@ function renderMealAnalysis(){
     `;
   }).join("");
 
-  box.innerHTML = `<p class="analysis-title">Comidas con más:</p>${rows}`;
+  box.innerHTML = `
+    <div class="analysis-inner">
+      <p class="analysis-title">Comidas con más:</p>
+      ${rows}
+    </div>
+  `;
 }
 
 function dayFoodTotals(){
@@ -784,7 +782,7 @@ function registerServiceWorker(){
       window.location.reload();
     });
 
-    navigator.serviceWorker.register("./service-worker.js?v=20260711g")
+    navigator.serviceWorker.register("./service-worker.js?v=20260712v1")
       .then((registration) => {
         checkForAppUpdate(registration);
 
