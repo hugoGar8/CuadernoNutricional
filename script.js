@@ -305,7 +305,7 @@ function buildMealCard(meal){
         <span class="item-name">${item.food}${m.missing ? " !" : ""}</span>
         <span class="item-grams">${item.grams} g</span>
         <span class="item-kcal">${Math.round(m.kcal)} kcal</span>
-        <button class="item-remove" type="button" aria-label="Eliminar">x</button>
+        <button class="item-remove" type="button" aria-label="Borrar">x</button>
       `;
       row.querySelector(".item-remove").addEventListener("click", () => removeItem(meal.key, idx));
       list.appendChild(row);
@@ -496,7 +496,7 @@ function buildFoodRow(name, food){
     const deleteButton = document.createElement("button");
     deleteButton.className = "food-action danger";
     deleteButton.type = "button";
-    deleteButton.textContent = "Eliminar";
+    deleteButton.textContent = "Borrar";
     deleteButton.addEventListener("click", () => deleteBaseFood(name));
     actions.appendChild(deleteButton);
   }
