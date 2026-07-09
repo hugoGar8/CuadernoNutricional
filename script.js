@@ -725,7 +725,7 @@ function registerServiceWorker(){
       window.location.reload();
     });
 
-    navigator.serviceWorker.register("./service-worker.js?v=20260708")
+    navigator.serviceWorker.register("./service-worker.js?v=20260709")
       .then((registration) => {
         checkForAppUpdate(registration);
 
