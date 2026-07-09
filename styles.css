@@ -284,10 +284,7 @@ body{
 }
 
 /* --- Comidas con más: --- */
-.analysis-box{
-  background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
-  padding:16px 18px;margin-bottom:18px;
-}
+
 .analysis-title{
   font-family:var(--font-display);font-weight:600;font-size:15px;margin:0 0 10px;
   color:var(--forest-deep);

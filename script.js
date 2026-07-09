@@ -389,7 +389,9 @@ function renderSummary(){
     ${macroRow("Carbohidratos", "carbs", t.carbs, maxGrams)}
     ${goalRow("Objetivo carbohidratos", t.carbs, dailyGoals.carbs, "g")}
     <div class="rule-thin"></div>
-    <p class="label-footnote">Calculado a partir de los alimentos añadidos en desayuno, comida, merienda y cena de este día.</p>
+    <div id="meal-analysis"></div>
+    <div class="rule-thin"></div>
+    <p class="label-footnote">Calculado a partir de los alimentos añadidos...</p>
   `;
   renderChart(t);
   renderMealAnalysis();
@@ -523,6 +525,7 @@ function renderMealAnalysis(){
     box.innerHTML = `
       <p class="analysis-title">Comidas con más:</p>
       <p class="empty-note">Añade alimentos a alguna comida para ver este análisis.</p>
+      ${rows}
     `;
     return;
   }
@@ -774,7 +777,7 @@ function registerServiceWorker(){
       window.location.reload();
     });
 
-    navigator.serviceWorker.register("./service-worker.js?v=20260709c")
+    navigator.serviceWorker.register("./service-worker.js?v=20260710g")
       .then((registration) => {
         checkForAppUpdate(registration);
 
