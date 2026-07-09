@@ -1,9 +1,11 @@
-const CACHE_VERSION = "cuaderno-nutricional-v20260708-2";
+const CACHE_VERSION = "cuaderno-nutricional-v20260709-1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css?v=20260708",
   "./script.js?v=20260708",
+  "./firebase-config.js",
+  "./firebase-sync.js",
   "./manifest.webmanifest",
   "./img/logo.svg",
   "./img/icon-192.png",
