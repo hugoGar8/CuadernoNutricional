@@ -51,6 +51,7 @@ const storagePrefix = "cuadernoNutricional:";
 const VALID_TABS = new Set(["diario", "objetivos", "alimentos"]);
 
 let customFoods = {};
+let deletedBaseFoods = new Set();
 let loggedDays = new Set();
 let calendarViewDate = new Date();
 let selectedDate = new Date();
@@ -71,7 +72,13 @@ function dateKey(d){
   const day = String(d.getDate()).padStart(2,"0");
   return `${y}-${m}-${day}`;
 }
-function allFoods(){ return {...FOOD_DB, ...customFoods}; }
+function allFoods(){
+  const base = {};
+  Object.keys(FOOD_DB).forEach(name => {
+    if(!deletedBaseFoods.has(name)) base[name] = FOOD_DB[name];
+  });
+  return {...base, ...customFoods};
+}
 function isBaseFood(name){ return Object.prototype.hasOwnProperty.call(FOOD_DB, name); }
 function isSameDay(a,b){
   return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
@@ -101,6 +108,8 @@ function listStored(prefix){
 async function init(){
   try{ customFoods = JSON.parse(getStored("foods") || "{}"); }
   catch(e){ customFoods = {}; }
+  try{ deletedBaseFoods = new Set(JSON.parse(getStored("deletedFoods") || "[]")); }
+  catch(e){ deletedBaseFoods = new Set(); }
   try{ dailyGoals = {...emptyGoals(), ...JSON.parse(getStored("goals") || "{}")}; }
   catch(e){ dailyGoals = emptyGoals(); }
   loggedDays = new Set(listStored("day:").map(k => k.slice(4)));
@@ -423,6 +432,7 @@ function renderFoodTable(){
     .sort((a,b) => a.localeCompare(b,"es"))
     .forEach(name => tbody.appendChild(buildFoodRow(name, foods[name])));
     renderFoodRanking();
+    renderDeletedFoodsList();
 }
 
 function hydrateGoalsForm(){
@@ -481,6 +491,13 @@ function buildFoodRow(name, food){
     deleteButton.type = "button";
     deleteButton.textContent = isBaseFood(name) ? "Restaurar" : "Borrar";
     deleteButton.addEventListener("click", () => deleteCustomFood(name));
+    actions.appendChild(deleteButton);
+  } else if(isBaseFood(name)){
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "food-action danger";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Eliminar";
+    deleteButton.addEventListener("click", () => deleteBaseFood(name));
     actions.appendChild(deleteButton);
   }
   return tr;
@@ -629,6 +646,51 @@ function deleteCustomFood(name){
   renderSummary();
   showToast(isBaseFood(name) ? `"${name}" restaurado.` : `"${name}" borrado.`);
 }
+function persistDeletedFoods(){ setStored("deletedFoods", JSON.stringify([...deletedBaseFoods])); }
+function deleteBaseFood(name){
+  deletedBaseFoods.add(name);
+  persistDeletedFoods();
+  populateDatalist();
+  renderFoodTable();
+  renderMeals();
+  renderSummary();
+  showToast(`"${name}" eliminado.`);
+}
+function restoreBaseFood(name){
+  deletedBaseFoods.delete(name);
+  persistDeletedFoods();
+  populateDatalist();
+  renderFoodTable();
+  renderMeals();
+  renderSummary();
+  showToast(`"${name}" restaurado.`);
+}
+function renderDeletedFoodsList(){
+  const box = document.getElementById("deleted-foods-box");
+  const list = document.getElementById("deleted-foods-list");
+  if(!box || !list) return;
+
+  if(deletedBaseFoods.size === 0){
+    box.classList.add("hidden");
+    list.innerHTML = "";
+    return;
+  }
+
+  box.classList.remove("hidden");
+  list.innerHTML = "";
+  [...deletedBaseFoods].sort((a,b) => a.localeCompare(b,"es")).forEach(name => {
+    const li = document.createElement("li");
+    li.className = "deleted-item";
+    li.innerHTML = `<span class="deleted-name">${name}</span>`;
+    const restoreButton = document.createElement("button");
+    restoreButton.className = "food-action secondary";
+    restoreButton.type = "button";
+    restoreButton.textContent = "Restaurar";
+    restoreButton.addEventListener("click", () => restoreBaseFood(name));
+    li.appendChild(restoreButton);
+    list.appendChild(li);
+  });
+}
 function renameFoodInDays(oldName, newName){
   listStored("day:").forEach(key => {
     try{
@@ -718,6 +780,7 @@ function exportNotebookState(){
   return {
     version: 1,
     foods: customFoods,
+    deletedFoods: [...deletedBaseFoods],
     goals: dailyGoals,
     days,
     selectedDate: dateKey(selectedDate),
@@ -733,9 +796,11 @@ async function importNotebookState(state){
     clearNotebookStorage();
 
     customFoods = sanitizeObject(state.foods);
+    deletedBaseFoods = new Set(sanitizeArray(state.deletedFoods).filter(name => isBaseFood(name)));
     dailyGoals = {...emptyGoals(), ...sanitizeObject(state.goals)};
 
     localStorage.setItem(storageKey("foods"), JSON.stringify(customFoods));
+    localStorage.setItem(storageKey("deletedFoods"), JSON.stringify([...deletedBaseFoods]));
     localStorage.setItem(storageKey("goals"), JSON.stringify(dailyGoals));
 
     const days = sanitizeObject(state.days);
@@ -776,6 +841,9 @@ function clearNotebookStorage(){
 
 function sanitizeObject(value){
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function sanitizeArray(value){
+  return Array.isArray(value) ? value : [];
 }
 
 function normalizeDay(value){

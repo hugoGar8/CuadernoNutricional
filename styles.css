@@ -323,6 +323,16 @@ body{
 .ranking-bar-track{height:6px;background:var(--paper-dim);border-radius:4px;overflow:hidden;}
 .ranking-bar-fill{height:100%;border-radius:4px;background:var(--forest);}
 
+/* --- Alimentos eliminados --- */
+.deleted-box.hidden{display:none;}
+.deleted-list{list-style:none;margin:0;padding:0;}
+.deleted-item{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px;
+}
+.deleted-item:last-child{border-bottom:none;}
+.deleted-name{color:var(--ink-soft);}
+
 @media (max-width:760px){
   .ranking-head{flex-direction:column;align-items:stretch;}
   .ranking-head select{width:100%;}
