@@ -145,6 +145,7 @@ function bindEvents(){
   });
   document.getElementById("food-search").addEventListener("input", renderFoodTable);
   document.getElementById("ranking-macro").addEventListener("change", renderFoodRanking);
+  document.getElementById("day-ranking-macro").addEventListener("change", renderDayRanking);
   document.getElementById("goals-form").addEventListener("submit", saveGoals);
   document.getElementById("goals-clear").addEventListener("click", clearGoals);
 }
@@ -392,6 +393,7 @@ function renderSummary(){
   `;
   renderChart(t);
   renderMealAnalysis();
+  renderDayRanking();
 }
 function goalRow(label, value, goal, unit){
   if(!goal || goal <= 0) return "";
@@ -551,6 +553,53 @@ function renderMealAnalysis(){
   }).join("");
 
   box.innerHTML = `<p class="analysis-title">Comidas con más:</p>${rows}`;
+}
+
+function dayFoodTotals(){
+  const totals = {};
+  MEALS.forEach(meal => {
+    (dayData[meal.key] || []).forEach(item => {
+      const m = computeItemMacros(item);
+      if(!totals[item.food]) totals[item.food] = {kcal:0, protein:0, fat:0, carbs:0};
+      totals[item.food].kcal += m.kcal;
+      totals[item.food].protein += m.protein;
+      totals[item.food].fat += m.fat;
+      totals[item.food].carbs += m.carbs;
+    });
+  });
+  return totals;
+}
+
+function renderDayRanking(){
+  const list = document.getElementById("day-ranking-list");
+  if(!list) return;
+
+  const select = document.getElementById("day-ranking-macro");
+  const macroKey = select ? select.value : "fat";
+  const meta = RANKING_META[macroKey];
+  const totals = dayFoodTotals();
+
+  const sorted = Object.keys(totals)
+    .map(name => ({name, value: totals[name][macroKey]}))
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  if(sorted.length === 0){
+    list.innerHTML = `<li class="day-ranking-empty">Añade alimentos para ver este ranking.</li>`;
+    return;
+  }
+
+  const max = sorted[0].value;
+  list.innerHTML = sorted.map(item => `
+    <li class="day-ranking-item">
+      <div class="day-ranking-item-top">
+        <span class="day-ranking-name">${item.name}</span>
+        <span class="day-ranking-value">${roundValue(item.value)} ${meta.unit}</span>
+      </div>
+      <div class="day-ranking-bar-track"><div class="day-ranking-bar-fill" style="width:${(item.value / max * 100).toFixed(0)}%"></div></div>
+    </li>
+  `).join("");
 }
 
 const RANKING_META = {
@@ -725,7 +774,7 @@ function registerServiceWorker(){
       window.location.reload();
     });
 
-    navigator.serviceWorker.register("./service-worker.js?v=20260709")
+    navigator.serviceWorker.register("./service-worker.js?v=20260709c")
       .then((registration) => {
         checkForAppUpdate(registration);
 

@@ -16,13 +16,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260709">
+  <link rel="stylesheet" href="styles.css?v=20260709c">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-sync.js"></script>
-  <script src="script.js?v=20260709" defer></script>
+  <script src="script.js?v=20260709c" defer></script>
 </head>
 <body>
   <div class="app">
@@ -58,6 +58,19 @@
             <div class="weekdays"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
             <div class="calendar-grid" id="calendar-grid"></div>
             <p class="calendar-hint">El punto indica un día con comidas registradas.</p>
+
+            <div class="day-ranking-box">
+              <div class="day-ranking-head">
+                <p class="analysis-title">Alimentos del día</p>
+                <select id="day-ranking-macro">
+                  <option value="fat" selected>Más grasa</option>
+                  <option value="protein">Más proteína</option>
+                  <option value="carbs">Más carbohidratos</option>
+                  <option value="kcal">Más calorías</option>
+                </select>
+              </div>
+              <ol class="day-ranking-list" id="day-ranking-list"></ol>
+            </div>
           </aside>
 
           <section class="day-panel">
@@ -133,13 +146,6 @@
             </select>
           </div>
           <ol class="ranking-list" id="ranking-list"></ol>
-        </div>
-
-        <div class="ranking-box deleted-box hidden" id="deleted-foods-box">
-          <div class="ranking-head">
-            <h3>Alimentos eliminados</h3>
-          </div>
-          <ul class="deleted-list" id="deleted-foods-list"></ul>
         </div>
       </section>
     </main>

@@ -299,6 +299,26 @@ body{
 .analysis-label{font-size:12px;font-weight:700;color:var(--ink-soft);}
 .analysis-value{font-family:var(--font-mono);font-size:13.5px;color:var(--forest-deep);font-weight: bold;}
 
+/* --- Alimentos del día (debajo del calendario) --- */
+.day-ranking-box{
+  background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 18px;margin-top:18px;
+}
+.day-ranking-head{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.day-ranking-head select{
+  font-family:var(--font-body);font-size:13px;padding:8px 10px;border:1px solid var(--line);
+  border-radius:7px;background:var(--paper);color:var(--ink);width:100%;
+}
+.day-ranking-list{list-style:none;margin:0;padding:0;}
+.day-ranking-item{padding:8px 0;border-bottom:1px dashed var(--line);}
+.day-ranking-item:last-child{border-bottom:none;}
+.day-ranking-item-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;margin-bottom:5px;}
+.day-ranking-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.day-ranking-value{font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+.day-ranking-bar-track{height:6px;background:var(--paper-dim);border-radius:4px;overflow:hidden;}
+.day-ranking-bar-fill{height:100%;border-radius:4px;background:var(--forest);}
+.day-ranking-empty{font-size:12.5px;color:var(--ink-soft);font-style:italic;padding:2px 0;}
+
 /* --- Ranking de alimentos --- */
 .ranking-box{
   background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
@@ -322,18 +342,3 @@ body{
 }
 .ranking-bar-track{height:6px;background:var(--paper-dim);border-radius:4px;overflow:hidden;}
 .ranking-bar-fill{height:100%;border-radius:4px;background:var(--forest);}
-
-/* --- Alimentos eliminados --- */
-.deleted-box.hidden{display:none;}
-.deleted-list{list-style:none;margin:0;padding:0;}
-.deleted-item{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px;
-}
-.deleted-item:last-child{border-bottom:none;}
-.deleted-name{color:var(--ink-soft);}
-
-@media (max-width:760px){
-  .ranking-head{flex-direction:column;align-items:stretch;}
-  .ranking-head select{width:100%;}
-}
