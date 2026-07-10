@@ -91,7 +91,7 @@ body{
 .cal-cell:not(.empty):hover{background:var(--paper-dim);}
 .cal-cell.today{border-color:var(--mustard);}
 .cal-cell.selected{background:var(--forest);color:var(--paper);font-weight:600;}
-.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--rust);position:absolute;bottom:5px;}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--rust);position:absolute;bottom:0px;}
 .cal-cell.selected .cal-dot{background:var(--paper);}
 .calendar-hint{font-size:11px;color:var(--ink-soft);margin:12px 2px 0;line-height:1.4;}
 .day-panel h2{
